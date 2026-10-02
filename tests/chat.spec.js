@@ -62,6 +62,10 @@ test("read-only chat preserves layout, settings, badges, theme, scroll and conne
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect(page.locator("#sidebar")).toHaveClass(/collapsed/);
   const handle = await card.locator(".chat-resizer").boundingBox();
+  expect(handle.width).toBe(36);
+  expect(handle.height).toBe(36);
+  await expect(card.locator(".chat-resizer svg")).toBeVisible();
+  await expect(card.locator(".chat-resizer")).toHaveCSS("cursor", "nwse-resize");
   await page.mouse.move(handle.x + 8, handle.y + 8);
   await page.mouse.down(); await page.mouse.move(handle.x + 48, handle.y + 38); await page.mouse.up();
   await expect(card).toHaveCSS("width", "460px");

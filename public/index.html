@@ -94,8 +94,8 @@
       position: fixed;
       top: 0;
       left: 0;
-      z-index: 3;
-      width: 16px;
+      z-index: 1;
+      width: 48px;
       height: 100vh;
     }
     .sidebar-toggle {
@@ -281,7 +281,7 @@
     .settings { display: grid; gap: 8px; }
     .setting-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .setting-heading label { color: var(--muted); font-size: 12px; }
-    .setting-value { display: flex; align-items: baseline; justify-content: flex-end; gap: 4px; min-width: 68px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-strong); color: var(--muted); font-size: 10px; }
+    .setting-value { display: flex; align-items: baseline; justify-content: flex-end; gap: 4px; min-width: 68px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-strong); color: var(--muted); font-size: 10px; -webkit-user-select: none; user-select: none; }
     .setting-value output { color: var(--text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
     input[type="range"] { appearance: none; display: block; width: 100%; height: 24px; margin: 0; background: transparent; cursor: pointer; }
     input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: linear-gradient(to right, var(--green) var(--range-progress), var(--scrollbar) var(--range-progress)); }
@@ -319,21 +319,21 @@
       right: 0;
       bottom: 0;
       z-index: 2;
-      width: 20px;
-      height: 20px;
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+      border-radius: 11px 0 0 0;
+      background: var(--panel-strong);
+      color: var(--green);
       cursor: nwse-resize;
       touch-action: none;
+      user-select: none;
     }
-    .chat-resizer::after {
-      position: absolute;
-      right: 4px;
-      bottom: 4px;
-      width: 8px;
-      height: 8px;
-      border-right: 2px solid rgba(0, 255, 163, 0.85);
-      border-bottom: 2px solid rgba(0, 255, 163, 0.85);
-      content: "";
-    }
+    .chat-resizer svg { width: 22px; height: 22px; pointer-events: none; }
+    .chat-resizer:hover, body.resizing-chats .chat-resizer { border-color: var(--green); background: var(--green); color: #05271c; }
     body.resizing-chats { cursor: nwse-resize; user-select: none; }
     .chat-header {
       display: flex;
@@ -737,6 +737,7 @@
         const resizer = document.createElement("div");
         resizer.className = "chat-resizer";
         resizer.title = "드래그해서 모든 채팅창 크기 조절";
+        resizer.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M6 12V6h6m0 12h6v-6"/></svg>';
         resizer.addEventListener("pointerdown", startChatResize);
         actions.append(open, button("↻", "icon", "이 채팅만 새로고침", () => view.refresh()));
         header.append(profile({ ...channel, live: channelStates.get(channel.id) }), name, actions);
