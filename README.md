@@ -37,6 +37,19 @@ Cloudflare Pages 프로젝트 설정:
 
 배포 후 `/api/search?keyword=냐미&offset=0&size=1` 주소가 JSON을 반환하면 정상입니다.
 
+## 검색 등록
+
+대표 주소는 `https://chzz-multi-chat.pages.dev/`입니다. 제목·설명, canonical,
+Open Graph, Twitter 카드, WebSite 구조화 데이터와 `public/robots.txt`,
+`public/sitemap.xml`을 같은 주소에 맞췄습니다. 채널 목록은 브라우저에만 저장되므로
+사이트맵에는 공개 홈 주소 하나만 포함합니다.
+
+Google Search Console에서 URL 접두어 속성으로 대표 주소를 추가하고 소유권을 확인한 뒤,
+사이트맵에 `https://chzz-multi-chat.pages.dev/sitemap.xml`을 제출하세요.
+소유권 확인용 HTML 파일 또는 메타 태그 값은 계정에서 발급받아 별도로 추가해야 합니다.
+소유권 인증이나 색인 등록이 자동으로 완료되는 것은 아닙니다.
+도메인을 변경하면 위 메타데이터와 robots.txt, sitemap.xml의 주소도 함께 변경하세요.
+
 ## 로컬 개발
 
 다음 명령으로 정적 페이지와 Pages Function을 함께 실행할 수 있습니다.

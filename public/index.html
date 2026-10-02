@@ -4,8 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080d0f">
-  <meta name="description" content="치지직 채팅창 모아보기.">
-  <title>CHZZK Multi Chat</title>
+  <meta name="description" content="여러 치지직 방송의 실시간 채팅창을 한 화면에서 모아보세요. 스트리머 검색, 채널별 채팅 보기, 창 크기 조절과 다크·라이트 모드를 지원합니다.">
+  <title>치지직 채팅창 모아보기 | CHZZK Multi Chat</title>
+  <link rel="canonical" href="https://chzz-multi-chat.pages.dev/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:site_name" content="치지직 채팅창 모아보기">
+  <meta property="og:title" content="치지직 채팅창 모아보기 | CHZZK Multi Chat">
+  <meta property="og:description" content="여러 치지직 방송의 실시간 채팅창을 한 화면에서 모아보세요. 스트리머 검색, 채널별 채팅 보기, 창 크기 조절과 다크·라이트 모드를 지원합니다.">
+  <meta property="og:url" content="https://chzz-multi-chat.pages.dev/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="치지직 채팅창 모아보기 | CHZZK Multi Chat">
+  <meta name="twitter:description" content="여러 치지직 방송의 실시간 채팅창을 한 화면에서 모아보세요. 스트리머 검색, 채널별 채팅 보기, 창 크기 조절과 다크·라이트 모드를 지원합니다.">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "치지직 채팅창 모아보기",
+      "alternateName": "CHZZK Multi Chat",
+      "url": "https://chzz-multi-chat.pages.dev/",
+      "description": "여러 치지직 방송의 실시간 채팅창을 한 화면에서 모아보세요. 스트리머 검색, 채널별 채팅 보기, 창 크기 조절과 다크·라이트 모드를 지원합니다.",
+      "inLanguage": "ko-KR"
+    }
+  </script>
   <link rel="stylesheet" href="/chat.css">
   <style>
     :root {
@@ -67,7 +88,6 @@
       border-right: 1px solid var(--line);
       background: var(--panel);
       box-shadow: 16px 0 42px rgba(0, 0, 0, 0.2);
-      transition: margin-left 180ms ease;
     }
     .sidebar.collapsed { margin-left: calc(var(--sidebar) * -1); }
     .sidebar-hotspot {
@@ -440,7 +460,6 @@
     let channels = load(CHANNELS_KEY, []);
     let config = { ...DEFAULT_CONFIG, ...load(CONFIG_KEY, {}) };
     let dragId = null;
-    let sidebarCloseTimer = null;
     const chatViews = new Map();
     const channelStates = new Map();
     const channelRequests = new Set();
@@ -761,26 +780,25 @@
     }
 
     function openSidebar() {
-      clearTimeout(sidebarCloseTimer);
       $("#sidebar").classList.remove("collapsed");
       $("#sidebar-toggle").textContent = "‹";
       $("#sidebar-toggle").setAttribute("aria-label", "설정 패널 접기");
     }
 
-    function closeSidebarSoon() {
-      clearTimeout(sidebarCloseTimer);
-      sidebarCloseTimer = setTimeout(() => {
-        const sidebar = $("#sidebar");
-        if (sidebar.matches(":hover") || sidebar.contains(document.activeElement)) return;
-        closeSidebar();
-      }, 420);
+    function isSidebarTarget(target) {
+      return target instanceof Node && ($("#sidebar").contains(target) || $("#sidebar-hotspot").contains(target));
+    }
+
+    function leaveSidebar(event) {
+      // Treat the fixed edge hotspot and panel as one hover area.
+      if (!isSidebarTarget(event.relatedTarget)) closeSidebar();
     }
 
     function closeSidebar() {
-      clearTimeout(sidebarCloseTimer);
       $("#sidebar").classList.add("collapsed");
       $("#sidebar-toggle").textContent = "›";
       $("#sidebar-toggle").setAttribute("aria-label", "설정 패널 펼치기");
+      if ($("#sidebar").contains(document.activeElement)) document.activeElement.blur();
     }
 
     function startChatResize(event) {
@@ -843,15 +861,16 @@
         location.reload();
       });
       $("#sidebar-toggle").addEventListener("click", () => {
-        const collapsed = $("#sidebar").classList.toggle("collapsed");
-        $("#sidebar-toggle").textContent = collapsed ? "›" : "‹";
-        $("#sidebar-toggle").setAttribute("aria-label", collapsed ? "설정 패널 펼치기" : "설정 패널 접기");
+        if ($("#sidebar").classList.contains("collapsed")) openSidebar();
+        else closeSidebar();
       });
       $("#sidebar-hotspot").addEventListener("mouseenter", openSidebar);
-      $("#sidebar").addEventListener("mouseenter", openSidebar);
-      $("#sidebar").addEventListener("mouseleave", closeSidebarSoon);
+      $("#sidebar-hotspot").addEventListener("mouseleave", leaveSidebar);
+      $("#sidebar").addEventListener("mouseleave", leaveSidebar);
       $("#sidebar").addEventListener("focusin", openSidebar);
-      $("#sidebar").addEventListener("focusout", closeSidebarSoon);
+      $("#sidebar").addEventListener("focusout", (event) => {
+        if (!isSidebarTarget(event.relatedTarget) && !$("#sidebar").matches(":hover") && !$("#sidebar-hotspot").matches(":hover")) closeSidebar();
+      });
       document.addEventListener("mouseout", (event) => {
         if (!event.relatedTarget) closeSidebar();
       });

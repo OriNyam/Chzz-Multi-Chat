@@ -1,5 +1,44 @@
 import { test, expect } from "@playwright/test";
 
+test("sidebar closes immediately even with focus and stays open across the hotspot boundary", async ({ page }) => {
+  await page.goto("/");
+  const sidebar = page.locator("#sidebar");
+  const collapsed = () => sidebar.evaluate(el => el.classList.contains("collapsed"));
+  for (const y of [40, 200, 850]) {
+    await page.mouse.move(700, y);
+    await page.mouse.move(1, y);
+    expect(await collapsed()).toBe(false);
+    for (const x of [15, 17, 2, 100, 359, 15]) {
+      await page.mouse.move(x, y);
+      expect(await collapsed()).toBe(false);
+    }
+    await page.waitForTimeout(500);
+    expect(await collapsed()).toBe(false);
+    await page.mouse.move(700, y);
+    expect(await collapsed()).toBe(true);
+    expect((await sidebar.boundingBox()).x + (await sidebar.boundingBox()).width).toBeLessThanOrEqual(0);
+  }
+  await page.mouse.move(2, 200);
+  await page.locator("#search-input").click();
+  await page.locator("#search-input").fill("냐미");
+  await page.mouse.move(700, 200);
+  expect(await collapsed()).toBe(true);
+  await expect(page.locator("#search-input")).not.toBeFocused();
+  await page.mouse.move(2, 40);
+  await page.locator("#sidebar-toggle").click();
+  expect(await collapsed()).toBe(true);
+  await page.mouse.move(2, 200);
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  expect(await collapsed()).toBe(true);
+  await page.mouse.move(700, 200);
+  await page.locator("#search-input").focus();
+  expect(await collapsed()).toBe(false);
+  await page.keyboard.press("Tab");
+  expect(await collapsed()).toBe(false);
+  await page.locator("#search-button").blur();
+  expect(await collapsed()).toBe(true);
+});
+
 test("long channel lists scroll independently of settings and integer size displays persist", async ({ page }) => {
   await page.addInitScript(() => {
     if (!localStorage.getItem("chzzk_multi_chat_channels")) {

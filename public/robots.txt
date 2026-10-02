@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://chzz-multi-chat.pages.dev/sitemap.xml
