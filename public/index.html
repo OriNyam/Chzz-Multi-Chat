@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080d0f">
   <title>CHZZK Multi Chat</title>
+  <link rel="stylesheet" href="/chat.css">
   <style>
     :root {
       --bg: #080d0f;
@@ -300,7 +301,6 @@
       content: "";
     }
     body.resizing-chats { cursor: nwse-resize; user-select: none; }
-    body.resizing-chats iframe { pointer-events: none; }
     .chat-header {
       display: flex;
       min-height: 42px;
@@ -312,15 +312,6 @@
     }
     .chat-header .name { color: var(--green); font-size: 17px; font-weight: 900; line-height: 1.3; }
     .chat-actions { display: flex; gap: 2px; }
-    iframe {
-      width: calc(100% / var(--chat-scale));
-      height: calc(100% / var(--chat-scale));
-      flex: 1 0 calc(100% / var(--chat-scale));
-      border: 0;
-      background: var(--frame-bg);
-      transform: scale(var(--chat-scale));
-      transform-origin: top left;
-    }
     .empty-state {
       display: grid;
       min-height: calc(100vh - 30px);
@@ -413,7 +404,8 @@
   </aside>
   <main class="chats" id="chats"></main>
 
-  <script>
+  <script type="module">
+    import { ChatView } from "/chat.js";
     const CHANNELS_KEY = "chzzk_multi_chat_channels";
     const CONFIG_KEY = "chzzk_multi_chat_config";
     const DEFAULT_CONFIG = { width: 360, height: 640, scale: 1, theme: "dark" };
@@ -422,6 +414,7 @@
     let config = { ...DEFAULT_CONFIG, ...load(CONFIG_KEY, {}) };
     let dragIndex = null;
     let sidebarCloseTimer = null;
+    const chatViews = new Map();
 
     function load(key, fallback) {
       try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
@@ -589,7 +582,14 @@
     function renderChats() {
       const selected = channels.filter((channel) => channel.selected !== false);
       const chats = $("#chats");
-      chats.replaceChildren();
+      for (const [id, entry] of chatViews) {
+        if (!selected.some(channel => channel.id === id)) {
+          entry.view.dispose();
+          entry.wrapper.remove();
+          chatViews.delete(id);
+        }
+      }
+      chats.querySelector(".empty-state")?.remove();
       $("#count").textContent = selected.length;
       if (!selected.length) {
         const empty = document.createElement("div");
@@ -599,6 +599,8 @@
         return;
       }
       selected.forEach((channel) => {
+        const existing = chatViews.get(channel.id);
+        if (existing) { chats.append(existing.wrapper); return; }
         const wrapper = document.createElement("section");
         wrapper.className = "chat";
         const header = document.createElement("header");
@@ -615,22 +617,21 @@
         open.rel = "noopener noreferrer";
         open.title = "방송 페이지 열기";
         open.textContent = "↗";
-        const frame = document.createElement("iframe");
-        frame.src = `https://chzzk.naver.com/live/${encodeURIComponent(channel.id)}/chat`;
-        frame.title = `${channel.name} 채팅`;
-        frame.allow = "clipboard-write";
+        const view = new ChatView(channel);
         const resizer = document.createElement("div");
         resizer.className = "chat-resizer";
         resizer.title = "드래그해서 모든 채팅창 크기 조절";
         resizer.addEventListener("pointerdown", startChatResize);
-        actions.append(open, button("↻", "icon", "이 채팅만 새로고침", () => { frame.src = frame.src; }));
+        actions.append(open, button("↻", "icon", "이 채팅만 새로고침", () => view.refresh()));
         header.append(name, actions);
-        wrapper.append(header, frame, resizer);
+        wrapper.append(header, view.notice, view.element, resizer);
+        chatViews.set(channel.id, { wrapper, view });
         chats.appendChild(wrapper);
       });
     }
 
     function updateConfig() {
+      const following = [...chatViews.values()].filter(({ view }) => view.follow);
       config.width = clamp($("#width-input").value, 240, 900, DEFAULT_CONFIG.width);
       config.height = clamp($("#height-input").value, 320, 1200, DEFAULT_CONFIG.height);
       config.scale = clamp($("#scale-input").value, 0.8, 1.5, DEFAULT_CONFIG.scale);
@@ -643,6 +644,9 @@
       $("#height-range").value = config.height;
       $("#scale-value").textContent = `${Math.round(config.scale * 100)}%`;
       saveConfig();
+      requestAnimationFrame(() => {
+        for (const { view } of following) if (!view.disposed) { view.follow = true; view.scrollToBottom(); }
+      });
     }
 
     function applyTheme(theme) {
@@ -733,7 +737,9 @@
         updateConfig();
       });
       $("#scale-input").addEventListener("input", updateConfig);
-      $("#refresh-all").addEventListener("click", renderChats);
+      $("#refresh-all").addEventListener("click", () => {
+        for (const { view } of chatViews.values()) view.refresh();
+      });
       $("#theme-toggle").addEventListener("click", () => {
         applyTheme(config.theme === "dark" ? "light" : "dark");
       });

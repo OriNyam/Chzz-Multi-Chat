@@ -1,0 +1,256 @@
+{
+  "colors": [
+    {
+      "code": "CC001",
+      "darkRgbValue": "#E2BE61",
+      "lightRgbValue": "#ECB21B",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC002",
+      "darkRgbValue": "#ECA843",
+      "lightRgbValue": "#EC983B",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC003",
+      "darkRgbValue": "#EC8A43",
+      "lightRgbValue": "#F6822F",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC004",
+      "darkRgbValue": "#EA723D",
+      "lightRgbValue": "#EA642F",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC005",
+      "darkRgbValue": "#E56B79",
+      "lightRgbValue": "#E4473F",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC006",
+      "darkRgbValue": "#E68199",
+      "lightRgbValue": "#DA2E39",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC007",
+      "darkRgbValue": "#E16CB5",
+      "lightRgbValue": "#D73181",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC008",
+      "darkRgbValue": "#BC7ACC",
+      "lightRgbValue": "#B729A0",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC009",
+      "darkRgbValue": "#A983E7",
+      "lightRgbValue": "#8929B7",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC010",
+      "darkRgbValue": "#8B89E1",
+      "lightRgbValue": "#5545DA",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC011",
+      "darkRgbValue": "#7194EE",
+      "lightRgbValue": "#4150DB",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC012",
+      "darkRgbValue": "#7994D0",
+      "lightRgbValue": "#2D63DD",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC013",
+      "darkRgbValue": "#71AAED",
+      "lightRgbValue": "#1878E9",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC014",
+      "darkRgbValue": "#5FB7E8",
+      "lightRgbValue": "#2A87DC",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC015",
+      "darkRgbValue": "#80BDD3",
+      "lightRgbValue": "#00A1DA",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC016",
+      "darkRgbValue": "#80D3CE",
+      "lightRgbValue": "#1D8C93",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC017",
+      "darkRgbValue": "#99D3BA",
+      "lightRgbValue": "#068660",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC018",
+      "darkRgbValue": "#94D59A",
+      "lightRgbValue": "#198337",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC019",
+      "darkRgbValue": "#BBE69A",
+      "lightRgbValue": "#2BA343",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "CC020",
+      "darkRgbValue": "#CCE57D",
+      "lightRgbValue": "#7AAF3E",
+      "effectType": null,
+      "effectValue": null
+    },
+    {
+      "code": "SG001",
+      "darkRgbValue": "#F3E659",
+      "lightRgbValue": "#ECB21B",
+      "effectType": "GRADATION",
+      "effectValue": {
+        "direction": "RIGHT",
+        "darkRgbEndValue": "#FE7A86",
+        "lightRgbEndValue": "#FF6D65"
+      }
+    },
+    {
+      "code": "SG002",
+      "darkRgbValue": "#EEEC69",
+      "lightRgbValue": "#A7CC2E",
+      "effectType": "GRADATION",
+      "effectValue": {
+        "direction": "RIGHT",
+        "darkRgbEndValue": "#24D881",
+        "lightRgbEndValue": "#12C770"
+      }
+    },
+    {
+      "code": "SG003",
+      "darkRgbValue": "#6BE5AA",
+      "lightRgbValue": "#05D771",
+      "effectType": "GRADATION",
+      "effectValue": {
+        "direction": "RIGHT",
+        "darkRgbEndValue": "#5DA8EC",
+        "lightRgbEndValue": "#3596ED"
+      }
+    },
+    {
+      "code": "SG004",
+      "darkRgbValue": "#5DA8EC",
+      "lightRgbValue": "#4DA5F5",
+      "effectType": "GRADATION",
+      "effectValue": {
+        "direction": "RIGHT",
+        "darkRgbEndValue": "#D581FF",
+        "lightRgbEndValue": "#B726FF"
+      }
+    },
+    {
+      "code": "SG005",
+      "darkRgbValue": "#D581FF",
+      "lightRgbValue": "#D47FFF",
+      "effectType": "GRADATION",
+      "effectValue": {
+        "direction": "RIGHT",
+        "darkRgbEndValue": "#FF8183",
+        "lightRgbEndValue": "#FF6466"
+      }
+    },
+    {
+      "code": "SH001",
+      "darkRgbValue": "#C9CEDC",
+      "lightRgbValue": "#2E3033",
+      "effectType": "HIGHLIGHT",
+      "effectValue": {
+        "darkRgbBackgroundValue": "#501916",
+        "lightRgbBackgroundValue": "#FADAD9"
+      }
+    },
+    {
+      "code": "SH002",
+      "darkRgbValue": "#C9CEDC",
+      "lightRgbValue": "#2E3033",
+      "effectType": "HIGHLIGHT",
+      "effectValue": {
+        "darkRgbBackgroundValue": "#473508",
+        "lightRgbBackgroundValue": "#FBF0D1"
+      }
+    },
+    {
+      "code": "SH003",
+      "darkRgbValue": "#C9CEDC",
+      "lightRgbValue": "#2E3033",
+      "effectType": "HIGHLIGHT",
+      "effectValue": {
+        "darkRgbBackgroundValue": "#11411B",
+        "lightRgbBackgroundValue": "#D5EDD9"
+      }
+    },
+    {
+      "code": "SH004",
+      "darkRgbValue": "#C9CEDC",
+      "lightRgbValue": "#2E3033",
+      "effectType": "HIGHLIGHT",
+      "effectValue": {
+        "darkRgbBackgroundValue": "#0A305D",
+        "lightRgbBackgroundValue": "#D1E4FB"
+      }
+    },
+    {
+      "code": "SH005",
+      "darkRgbValue": "#C9CEDC",
+      "lightRgbValue": "#2E3033",
+      "effectType": "HIGHLIGHT",
+      "effectValue": {
+        "darkRgbBackgroundValue": "#3E1252",
+        "lightRgbBackgroundValue": "#E7D4F1"
+      }
+    },
+    {
+      "code": "SS001",
+      "darkRgbValue": "#00000000",
+      "lightRgbValue": "#FFFFFF00",
+      "effectType": "STEALTH",
+      "effectValue": null
+    }
+  ]
+}
