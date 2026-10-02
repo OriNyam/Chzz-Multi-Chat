@@ -1,0 +1,57 @@
+import { test, expect } from "@playwright/test";
+
+test("saved channels show portraits and live-first order without changing chat layout", async ({ page }) => {
+  const ids = ["a", "b", "c"].map(char => char.repeat(32));
+  const names = ["오프라인 채널", "라이브 채널", "두 번째 라이브"];
+  let live = [false, true, true];
+  let fail = false;
+  await page.clock.install();
+  await page.addInitScript(({ ids, names }) => {
+    localStorage.setItem("chzzk_multi_chat_channels", JSON.stringify(ids.map((id, index) => ({ id, name: names[index], selected: false }))));
+  }, { ids, names });
+  await page.route("**/api/channel?*", route => {
+    const index = ids.indexOf(new URL(route.request().url()).searchParams.get("channelId"));
+    return route.fulfill(fail ? { status: 502, json: {} } : { json: { name: names[index], image: `https://ssl.pstatic.net/profile${index}.png`, live: live[index] } });
+  });
+  await page.route("https://*.pstatic.net/**", route => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#6495ed"/><circle cx="20" cy="14" r="8" fill="white"/><circle cx="20" cy="40" r="15" fill="white"/></svg>' }));
+  await page.route("**/api/chat?*", route => route.fulfill({ json: { state: "waiting" } }));
+  await page.route("**/api/chat-colors", route => route.fulfill({ json: { colors: [] } }));
+  await page.route("**/api/search?*", route => route.fulfill({ json: { content: { data: [{ channel: { channelId: ids[0], channelName: names[0], channelImageUrl: "https://ssl.pstatic.net/profile0.png", openLive: true, followerCount: 12345 } }] } } }));
+  await page.goto("/");
+  await page.mouse.move(2, 200);
+  const rows = page.locator(".channel-item");
+  await expect(rows.locator(".name")).toHaveText([names[1], names[2], names[0]]);
+  await expect(rows.locator("img.profile")).toHaveCount(3);
+  await expect(rows.first().locator(".profile")).toHaveCSS("border-top-width", "3px");
+  await expect(rows.first().locator(".profile")).toHaveCSS("border-top-color", "rgb(255, 69, 69)");
+  await expect(rows.first().locator(".profile")).toHaveCSS("border-radius", "50%");
+  await expect(rows.last().locator(".profile")).not.toHaveClass(/is-live/);
+  const data = await page.evaluateHandle(() => new DataTransfer());
+  await rows.nth(1).dispatchEvent("dragstart", { dataTransfer: data });
+  await rows.nth(0).dispatchEvent("drop", { dataTransfer: data });
+  await expect(rows.locator(".name")).toHaveText([names[2], names[1], names[0]]);
+  await rows.first().locator("input").check();
+  await expect(page.locator(".chat-header .name")).toHaveText([names[2]]);
+  await page.locator("#search-input").fill("채널");
+  await page.locator("#search-button").click();
+  await expect(page.locator(".result .meta")).toHaveText("● LIVE");
+  await expect(page.locator(".result")).not.toContainText("팔로워");
+  await page.locator("#results").evaluate(el => el.replaceChildren());
+  await page.screenshot({ path: ".wrangler/channels-dark.png" });
+  await page.locator("#theme-toggle").click();
+  await page.screenshot({ path: ".wrangler/channels-light.png" });
+  fail = true;
+  await page.clock.fastForward(61000);
+  await expect(rows.locator(".name")).toHaveText([names[2], names[1], names[0]]);
+  fail = false;
+  live = [true, true, false];
+  await page.clock.fastForward(61000);
+  await expect(rows.locator(".name")).toHaveText([names[0], names[1], names[2]]);
+  await expect(page.locator(".chat-header .name")).toHaveText([names[2]]);
+  await expect(rows.last().locator("input")).toBeChecked();
+  await rows.nth(1).getByTitle("채널 삭제").click();
+  await expect(rows.locator(".name")).toHaveText([names[0], names[2]]);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("chzzk_multi_chat_channels")));
+  expect(saved.map(channel => channel.id)).toEqual([ids[0], ids[2]]);
+  expect(saved.every(channel => channel.image)).toBe(true);
+});

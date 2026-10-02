@@ -13,6 +13,7 @@ test("read-only chat preserves layout, settings, badges, theme, scroll and conne
   page.on("pageerror", error => errors.push(error.message));
   await page.addInitScript(ch => localStorage.setItem("chzzk_multi_chat_channels", JSON.stringify([ch, { ...ch, id: "b".repeat(32), name: "두 번째 채널" }])), channel);
   await page.route("**/api/chat?*", route => route.fulfill({ json: { chatChannelId: "room", accessToken: "test" } }));
+  await page.route("**/api/channel?*", route => route.fulfill({ json: { live: false } }));
   await page.route("**/api/chat-colors", route => route.fulfill({ status: 502, json: { colors: [] } }));
   await page.route("https://*.pstatic.net/**", route => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20" fill="green"/></svg>' }));
   await page.routeWebSocket(/chat\.naver\.com/, socket => {

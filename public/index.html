@@ -215,7 +215,9 @@
       color: var(--green);
       object-fit: cover;
       font-weight: 900;
+      border: 3px solid transparent;
     }
+    .profile.is-live { border-color: #ff4545; }
     .copy { min-width: 0; flex: 1; }
     .name { overflow: hidden; font-size: 13px; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
     .meta { margin-top: 4px; color: var(--muted); font-size: 11px; }
@@ -412,9 +414,13 @@
     const $ = (selector) => document.querySelector(selector);
     let channels = load(CHANNELS_KEY, []);
     let config = { ...DEFAULT_CONFIG, ...load(CONFIG_KEY, {}) };
-    let dragIndex = null;
+    let dragId = null;
     let sidebarCloseTimer = null;
     const chatViews = new Map();
+    const channelStates = new Map();
+    const channelRequests = new Set();
+    let refreshingChannels = false;
+    let lastChannelRefresh = 0;
 
     function load(key, fallback) {
       try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
@@ -427,7 +433,6 @@
       const number = Number(value);
       return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
     }
-    function followers(value) { return new Intl.NumberFormat("ko-KR").format(Number(value) || 0) + "명"; }
     function setStatus(message = "", error = false) {
       $("#status").textContent = message;
       $("#status").classList.toggle("error", error);
@@ -442,18 +447,64 @@
       return element;
     }
     function profile(channel) {
+      const className = `profile${channel.live ? " is-live" : ""}`;
       if (channel.image) {
         const image = document.createElement("img");
         image.src = channel.image;
         image.alt = "";
         image.loading = "lazy";
-        image.className = "profile";
+        image.className = className;
+        image.draggable = false;
+        image.addEventListener("error", () => image.replaceWith(profile({ ...channel, image: "" })), { once: true });
         return image;
       }
       const fallback = document.createElement("div");
-      fallback.className = "profile";
+      fallback.className = className;
       fallback.textContent = (channel.name || "?").slice(0, 1);
       return fallback;
+    }
+
+    function liveLabel(live) {
+      const meta = document.createElement("div");
+      meta.className = live ? "meta live" : "meta";
+      meta.textContent = live ? "● LIVE" : live === false ? "오프라인" : "";
+      return meta;
+    }
+
+    async function refreshChannel(channel) {
+      if (channelRequests.has(channel.id)) return;
+      channelRequests.add(channel.id);
+      try {
+        const response = await fetch(`/api/channel?channelId=${encodeURIComponent(channel.id)}`, { signal: AbortSignal.timeout(10000) });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!channels.includes(channel)) return;
+        const previous = channelStates.get(channel.id);
+        channelStates.set(channel.id, data.live === true);
+        const changed = (typeof data.name === "string" && data.name !== channel.name) || (typeof data.image === "string" && data.image !== channel.image);
+        if (typeof data.name === "string") channel.name = data.name;
+        if (typeof data.image === "string") channel.image = data.image;
+        if (changed) {
+          saveChannels();
+          const entry = chatViews.get(channel.id);
+          if (entry) entry.wrapper.querySelector(".name").textContent = channel.name;
+        }
+        if (changed || previous !== data.live) renderChannelList();
+      } catch { /* Keep the last known state when a metadata request fails. */ }
+      finally { channelRequests.delete(channel.id); }
+    }
+
+    async function refreshChannels() {
+      if (refreshingChannels || document.hidden) return;
+      refreshingChannels = true;
+      lastChannelRefresh = Date.now();
+      const pending = [...channels];
+      // Limit parallel metadata requests even when many channels are saved.
+      try {
+        await Promise.all(Array.from({ length: Math.min(3, pending.length) }, async () => {
+          while (pending.length) await refreshChannel(pending.shift());
+        }));
+      } finally { refreshingChannels = false; }
     }
 
     async function search() {
@@ -474,7 +525,6 @@
           id: channel.channelId,
           name: channel.channelName,
           image: channel.channelImageUrl || "",
-          followers: channel.followerCount || 0,
           live: Boolean(channel.openLive),
           selected: true
         }));
@@ -498,10 +548,7 @@
         const name = document.createElement("div");
         name.className = "name";
         name.textContent = channel.name;
-        const meta = document.createElement("div");
-        meta.className = channel.live ? "meta live" : "meta";
-        meta.textContent = `${channel.live ? "● LIVE · " : ""}팔로워 ${followers(channel.followers)}`;
-        copy.append(name, meta);
+        copy.append(name, liveLabel(channel.live));
         const exists = channels.some((saved) => saved.id === channel.id);
         const add = button(exists ? "추가됨" : "추가", "add");
         add.disabled = exists;
@@ -518,19 +565,25 @@
     function addChannel(channel) {
       if (!channel.id || channels.some((saved) => saved.id === channel.id)) return;
       channels.push({ id: channel.id, name: channel.name || "직접 추가한 채널", image: channel.image || "", selected: true });
+      if (typeof channel.live === "boolean") channelStates.set(channel.id, channel.live);
       saveChannels();
       renderChannelList();
       renderChats();
+      refreshChannel(channels[channels.length - 1]);
     }
 
-    function removeChannel(index) {
+    function removeChannel(id) {
+      const index = channels.findIndex(channel => channel.id === id);
+      if (index < 0) return;
       channels.splice(index, 1);
+      channelStates.delete(id);
       saveChannels();
       renderChannelList();
       renderChats();
     }
 
     function renderChannelList() {
+      if (dragId !== null) return;
       const list = $("#channel-list");
       list.replaceChildren();
       if (!channels.length) {
@@ -540,18 +593,29 @@
         list.appendChild(empty);
         return;
       }
-      channels.forEach((channel, index) => {
+      const ordered = [...channels].sort((a, b) => Number(channelStates.get(b.id) === true) - Number(channelStates.get(a.id) === true));
+      ordered.forEach((channel) => {
         const item = document.createElement("div");
         item.className = "channel-item";
+        item.dataset.channelId = channel.id;
         item.draggable = true;
-        item.addEventListener("dragstart", () => { dragIndex = index; item.classList.add("dragging"); });
-        item.addEventListener("dragend", () => item.classList.remove("dragging"));
+        item.addEventListener("dragstart", (event) => {
+          dragId = channel.id;
+          event.dataTransfer.setData("text/plain", channel.id);
+          event.dataTransfer.effectAllowed = "move";
+          item.classList.add("dragging");
+        });
+        item.addEventListener("dragend", () => { dragId = null; renderChannelList(); });
         item.addEventListener("dragover", (event) => event.preventDefault());
-        item.addEventListener("drop", () => {
-          if (dragIndex === null || dragIndex === index) return;
-          const [moved] = channels.splice(dragIndex, 1);
-          channels.splice(index, 0, moved);
-          dragIndex = null;
+        item.addEventListener("drop", (event) => {
+          event.preventDefault();
+          const from = channels.findIndex(saved => saved.id === dragId);
+          const to = channels.findIndex(saved => saved.id === channel.id);
+          if (from < 0 || to < 0 || from === to) return;
+          if ((channelStates.get(dragId) === true) !== (channelStates.get(channel.id) === true)) return;
+          const [moved] = channels.splice(from, 1);
+          channels.splice(to, 0, moved);
+          dragId = null;
           saveChannels();
           renderChannelList();
           renderChats();
@@ -573,8 +637,9 @@
         const name = document.createElement("div");
         name.className = "name";
         name.textContent = channel.name;
-        copy.appendChild(name);
-        item.append(handle, checkbox, copy, button("×", "icon danger", "채널 삭제", () => removeChannel(index)));
+        const live = channelStates.get(channel.id);
+        copy.append(name, liveLabel(live));
+        item.append(handle, checkbox, profile({ ...channel, live }), copy, button("×", "icon danger", "채널 삭제", () => removeChannel(channel.id)));
         list.appendChild(item);
       });
     }
@@ -719,6 +784,11 @@
       updateConfig();
       renderChannelList();
       renderChats();
+      refreshChannels();
+      setInterval(refreshChannels, 60000);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && Date.now() - lastChannelRefresh > 30000) refreshChannels();
+      });
       $("#search-button").addEventListener("click", search);
       $("#search-input").addEventListener("keydown", (event) => { if (event.key === "Enter") search(); });
       $("#manual-button").addEventListener("click", () => {
