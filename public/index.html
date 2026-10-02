@@ -79,7 +79,10 @@
     button { cursor: pointer; }
 
     .sidebar {
-      position: relative;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
       z-index: 2;
       display: flex;
       width: var(--sidebar);
@@ -89,7 +92,7 @@
       background: var(--panel);
       box-shadow: 16px 0 42px rgba(0, 0, 0, 0.2);
     }
-    .sidebar.collapsed { margin-left: calc(var(--sidebar) * -1); }
+    .sidebar.collapsed { transform: translateX(-100%); }
     .sidebar-hotspot {
       position: fixed;
       top: 0;
@@ -293,6 +296,7 @@
 
     .chats {
       display: grid;
+      isolation: isolate;
       flex: 1;
       grid-auto-rows: calc(var(--chat-height) * 1px);
       grid-template-columns: repeat(auto-fill, minmax(min(calc(var(--chat-width) * 1px), 100%), calc(var(--chat-width) * 1px)));
@@ -461,6 +465,7 @@
     let config = { ...DEFAULT_CONFIG, ...load(CONFIG_KEY, {}) };
     let dragId = null;
     const chatViews = new Map();
+    const DISCONNECT_DELAY = 3000;
     const channelStates = new Map();
     const channelRequests = new Set();
     let refreshingChannels = false;
@@ -700,9 +705,14 @@
       const chats = $("#chats");
       for (const [id, entry] of chatViews) {
         if (!selected.some(channel => channel.id === id)) {
-          entry.view.dispose();
           entry.wrapper.remove();
-          chatViews.delete(id);
+          // Keep one reusable connection briefly in case the channel was hidden by mistake.
+          if (entry.disconnectTimer == null) {
+            entry.disconnectTimer = setTimeout(() => {
+              entry.view.dispose();
+              chatViews.delete(id);
+            }, DISCONNECT_DELAY);
+          }
         }
       }
       chats.querySelector(".empty-state")?.remove();
@@ -716,7 +726,17 @@
       }
       selected.forEach((channel) => {
         const existing = chatViews.get(channel.id);
-        if (existing) { chats.append(existing.wrapper); return; }
+        if (existing) {
+          clearTimeout(existing.disconnectTimer);
+          existing.disconnectTimer = null;
+          existing.view.channel = channel;
+          const header = existing.wrapper.querySelector(".chat-header");
+          header.querySelector(".name").textContent = channel.name;
+          header.querySelector(".profile").replaceWith(profile({ ...channel, live: channelStates.get(channel.id) }));
+          chats.append(existing.wrapper);
+          if (existing.view.follow) existing.view.scrollToBottom();
+          return;
+        }
         const wrapper = document.createElement("section");
         wrapper.className = "chat";
         const header = document.createElement("header");
@@ -748,7 +768,7 @@
     }
 
     function updateConfig(values = {}) {
-      const following = [...chatViews.values()].filter(({ view }) => view.follow);
+      const following = [...chatViews.values()].filter(({ view, disconnectTimer }) => disconnectTimer == null && view.follow);
       config.width = Math.round(clamp(values.width ?? config.width, 240, 900, DEFAULT_CONFIG.width));
       config.height = Math.round(clamp(values.height ?? config.height, 320, 1200, DEFAULT_CONFIG.height));
       config.scale = clamp(values.scale ?? config.scale, 0.8, 1.5, DEFAULT_CONFIG.scale);
@@ -850,7 +870,7 @@
       $("#height-range").addEventListener("input", (event) => updateConfig({ height: event.target.value }));
       $("#scale-input").addEventListener("input", (event) => updateConfig({ scale: event.target.value }));
       $("#refresh-all").addEventListener("click", () => {
-        for (const { view } of chatViews.values()) view.refresh();
+        for (const { view, disconnectTimer } of chatViews.values()) if (disconnectTimer == null) view.refresh();
       });
       $("#theme-toggle").addEventListener("click", () => {
         applyTheme(config.theme === "dark" ? "light" : "dark");

@@ -3,11 +3,13 @@ import { test, expect } from "@playwright/test";
 test("sidebar closes immediately even with focus and stays open across the hotspot boundary", async ({ page }) => {
   await page.goto("/");
   const sidebar = page.locator("#sidebar");
+  const chatBounds = await page.locator("#chats").boundingBox();
   const collapsed = () => sidebar.evaluate(el => el.classList.contains("collapsed"));
   for (const y of [40, 200, 850]) {
     await page.mouse.move(700, y);
     await page.mouse.move(40, y);
     expect(await collapsed()).toBe(false);
+    expect(await page.locator("#chats").boundingBox()).toEqual(chatBounds);
     for (const x of [47, 49, 2, 100, 359, 40]) {
       await page.mouse.move(x, y);
       expect(await collapsed()).toBe(false);

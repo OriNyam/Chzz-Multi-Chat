@@ -151,8 +151,11 @@ export class ChatView {
     clearTimeout(this.retryTimer);
     clearTimeout(this.connectTimer);
     clearTimeout(this.pollTimer);
+    clearTimeout(this.metadataTimer);
     clearInterval(this.heartbeat);
     this.abort?.abort();
+    this.pollAbort?.abort();
+    this.pollAbort = null;
     if (this.socket) {
       this.socket.onopen = this.socket.onmessage = this.socket.onerror = this.socket.onclose = null;
       this.socket.close();
@@ -166,7 +169,7 @@ export class ChatView {
     this.cleanup();
     const controller = this.abort = new AbortController();
     this.setStatus(this.retries ? "연결이 끊겨 다시 연결 중..." : "채팅 연결 중...");
-    const timeout = setTimeout(() => controller.abort(), 18000);
+    const timeout = this.metadataTimer = setTimeout(() => controller.abort(), 18000);
     try {
       const response = await fetch(`/api/chat?channelId=${encodeURIComponent(this.channel.id)}`, { signal: controller.signal, cache: "no-store" });
       const data = await response.json();
@@ -235,12 +238,14 @@ export class ChatView {
     clearTimeout(this.pollTimer);
     const generation = this.generation;
     this.pollTimer = setTimeout(async () => {
+      const controller = this.pollAbort = new AbortController();
       try {
-        const response = await fetch(`/api/chat?channelId=${encodeURIComponent(this.channel.id)}&status=1`, { signal: AbortSignal.timeout(10000), cache: "no-store" });
+        const response = await fetch(`/api/chat?channelId=${encodeURIComponent(this.channel.id)}&status=1`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]), cache: "no-store" });
         const data = await response.json();
         if (this.disposed || generation !== this.generation) return;
         if (response.ok && data.chatChannelId !== this.chatChannelId) { this.connect(); return; }
       } catch { /* A transient metadata failure must not interrupt a healthy socket. */ }
+      finally { if (this.pollAbort === controller) this.pollAbort = null; }
       if (!this.disposed && generation === this.generation) this.poll();
     }, 60000);
   }
