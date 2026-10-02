@@ -5,6 +5,10 @@ test("saved channels show portraits and live-first order without changing chat l
   const names = ["오프라인 채널", "라이브 채널", "두 번째 라이브"];
   let live = [false, true, true];
   let fail = false;
+  let failedRefreshes = 0;
+  page.on("requestfinished", request => {
+    if (fail && request.url().includes("/api/channel?")) failedRefreshes++;
+  });
   await page.clock.install();
   await page.addInitScript(({ ids, names }) => {
     localStorage.setItem("chzzk_multi_chat_channels", JSON.stringify(ids.map((id, index) => ({ id, name: names[index], selected: false }))));
@@ -48,6 +52,7 @@ test("saved channels show portraits and live-first order without changing chat l
   await page.screenshot({ path: ".wrangler/channels-light.png" });
   fail = true;
   await page.clock.fastForward(61000);
+  await expect.poll(() => failedRefreshes).toBe(3);
   await expect(rows.locator(".name")).toHaveText([names[2], names[1], names[0]]);
   fail = false;
   live = [true, true, false];

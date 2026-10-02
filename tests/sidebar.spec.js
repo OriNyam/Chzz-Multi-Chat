@@ -1,6 +1,10 @@
 import { test, expect } from "@playwright/test";
 
 test("sidebar closes immediately even with focus and stays open across the hotspot boundary", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("chzzk_multi_chat_channels", JSON.stringify([{ id: "a".repeat(32), name: "테스트", selected: true }])));
+  await page.route("**/api/channel?*", route => route.fulfill({ json: { live: false } }));
+  await page.route("**/api/chat?*", route => route.fulfill({ json: { state: "waiting" } }));
+  await page.route("**/api/chat-colors", route => route.fulfill({ json: { colors: [] } }));
   await page.goto("/");
   const sidebar = page.locator("#sidebar");
   const chatBounds = await page.locator("#chats").boundingBox();
@@ -18,7 +22,7 @@ test("sidebar closes immediately even with focus and stays open across the hotsp
     expect(await collapsed()).toBe(false);
     await page.mouse.move(700, y);
     expect(await collapsed()).toBe(true);
-    expect((await sidebar.boundingBox()).x + (await sidebar.boundingBox()).width).toBeLessThanOrEqual(0);
+    await expect.poll(async () => { const bounds = await sidebar.boundingBox(); return bounds.x + bounds.width; }).toBeLessThanOrEqual(0);
   }
   await page.mouse.move(2, 200);
   await page.locator("#search-input").click({ position: { x: 12, y: 12 } });
@@ -40,6 +44,49 @@ test("sidebar closes immediately even with focus and stays open across the hotsp
   expect(await collapsed()).toBe(false);
   await page.locator("#search-button").blur();
   expect(await collapsed()).toBe(true);
+});
+
+test("empty or fully unchecked channels keep the sidebar open and resume auto-hide when selected", async ({ page }) => {
+  await page.route("**/api/channel?*", route => route.fulfill({ json: { live: false } }));
+  await page.route("**/api/chat?*", route => route.fulfill({ json: { state: "waiting" } }));
+  await page.route("**/api/chat-colors", route => route.fulfill({ json: { colors: [] } }));
+  await page.goto("/");
+  const sidebar = page.locator("#sidebar");
+  await expect(sidebar).toHaveClass(/pinned/);
+  await expect(sidebar).not.toHaveClass(/collapsed/);
+  await expect(sidebar).toHaveCSS("transition-duration", "0.16s");
+  await expect(page.locator("#sidebar-toggle")).toBeHidden();
+  await page.mouse.move(900, 300);
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect(sidebar).not.toHaveClass(/collapsed/);
+  await page.locator("summary").click();
+  await page.locator("#manual-input").fill("a".repeat(32));
+  await page.locator("#manual-button").click();
+  await expect(sidebar).not.toHaveClass(/pinned/);
+  await page.mouse.move(900, 300);
+  await expect(sidebar).toHaveClass(/collapsed/);
+  // Move past the hotspot before the sliding panel has reached the pointer.
+  await page.mouse.move(40, 300);
+  await page.mouse.move(200, 300);
+  await expect(sidebar).not.toHaveClass(/collapsed/);
+  await expect.poll(async () => (await sidebar.boundingBox()).x).toBe(0);
+  await page.locator(".channel-item input").uncheck();
+  await expect(sidebar).toHaveClass(/pinned/);
+  await page.mouse.move(900, 300);
+  await expect(sidebar).not.toHaveClass(/collapsed/);
+  await page.reload();
+  await expect(sidebar).toHaveClass(/pinned/);
+  await expect(sidebar).not.toHaveClass(/collapsed/);
+  await page.locator(".channel-item input").check();
+  await page.mouse.move(900, 300);
+  await expect(sidebar).toHaveClass(/collapsed/);
+  await page.mouse.move(40, 300);
+  await page.locator(".channel-item").getByTitle("채널 삭제").click();
+  await page.mouse.move(900, 300);
+  await expect(sidebar).toHaveClass(/pinned/);
+  await expect(sidebar).not.toHaveClass(/collapsed/);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(sidebar).toHaveCSS("transition-duration", "0s");
 });
 
 test("long channel lists scroll independently of settings and integer size displays persist", async ({ page }) => {

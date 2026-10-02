@@ -91,8 +91,10 @@
       border-right: 1px solid var(--line);
       background: var(--panel);
       box-shadow: 16px 0 42px rgba(0, 0, 0, 0.2);
+      transform: translateX(0);
+      transition: transform 160ms ease-out;
     }
-    .sidebar.collapsed { transform: translateX(-100%); }
+    .sidebar.collapsed { transform: translateX(-100%); pointer-events: none; }
     .sidebar-hotspot {
       position: fixed;
       top: 0;
@@ -114,7 +116,10 @@
       color: var(--green);
       font-size: 20px;
     }
-    .sidebar.collapsed .sidebar-toggle { display: none; }
+    .sidebar.collapsed .sidebar-toggle, .sidebar.pinned .sidebar-toggle { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .sidebar { transition: none; }
+    }
     .sidebar-header {
       display: flex;
       flex-shrink: 0;
@@ -717,7 +722,9 @@
       }
       chats.querySelector(".empty-state")?.remove();
       $("#count").textContent = selected.length;
+      $("#sidebar").classList.toggle("pinned", !selected.length);
       if (!selected.length) {
+        openSidebar();
         const empty = document.createElement("div");
         empty.className = "empty-state";
         empty.innerHTML = "<div><strong>표시할 채팅창이 없습니다</strong><span>왼쪽에서 스트리머를 검색해 추가하거나<br>추가한 채널의 체크박스를 켜 주세요.</span></div>";
@@ -812,10 +819,18 @@
 
     function leaveSidebar(event) {
       // Treat the fixed edge hotspot and panel as one hover area.
-      if (!isSidebarTarget(event.relatedTarget)) closeSidebar();
+      if (!isSidebarTarget(event.relatedTarget) && !isWithinSidebar(event)) closeSidebar();
+    }
+
+    function isWithinSidebar(event) {
+      // Use the final panel bounds so its moving edge cannot dismiss it during entry.
+      if (event.clientX >= 0 && event.clientX < $("#sidebar").offsetWidth && event.clientY >= 0 && event.clientY < window.innerHeight) return true;
+      const toggle = $("#sidebar-toggle").getBoundingClientRect();
+      return event.clientX >= toggle.left && event.clientX < toggle.right && event.clientY >= toggle.top && event.clientY < toggle.bottom;
     }
 
     function closeSidebar() {
+      if ($("#sidebar").classList.contains("pinned")) return;
       $("#sidebar").classList.add("collapsed");
       $("#sidebar-toggle").textContent = "›";
       $("#sidebar-toggle").setAttribute("aria-label", "설정 패널 펼치기");
@@ -885,9 +900,14 @@
         if ($("#sidebar").classList.contains("collapsed")) openSidebar();
         else closeSidebar();
       });
-      $("#sidebar-hotspot").addEventListener("mouseenter", openSidebar);
       $("#sidebar-hotspot").addEventListener("mouseleave", leaveSidebar);
       $("#sidebar").addEventListener("mouseleave", leaveSidebar);
+      document.addEventListener("mousemove", (event) => {
+        // Only real pointer movement may reopen a panel, not exposure of the hotspot while sliding.
+        if ($("#sidebar").classList.contains("collapsed")) {
+          if ($("#sidebar-hotspot").contains(event.target)) openSidebar();
+        } else if (!isWithinSidebar(event)) closeSidebar();
+      });
       $("#sidebar").addEventListener("focusin", openSidebar);
       $("#sidebar").addEventListener("focusout", (event) => {
         if (!isSidebarTarget(event.relatedTarget) && !$("#sidebar").matches(":hover") && !$("#sidebar-hotspot").matches(":hover")) closeSidebar();
@@ -897,8 +917,7 @@
       });
       window.addEventListener("blur", closeSidebar);
       applyTheme(config.theme);
-      $("#sidebar-toggle").textContent = "›";
-      $("#sidebar-toggle").setAttribute("aria-label", "설정 패널 펼치기");
+      if ($("#sidebar").classList.contains("collapsed")) closeSidebar();
     }
 
     init();
