@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("public discovery metadata and sitemap consistently identify the chat viewer", async ({ page, request }) => {
-  const canonical = "https://chzz-multi-chat.pages.dev/";
+  const canonical = "https://multichat.nyamnonymous.stream/";
   const response = await page.goto("/");
   expect(response.status()).toBe(200);
   await expect(page).toHaveTitle("치지직 채팅창 모아보기 | CHZZK Multi Chat");
