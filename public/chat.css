@@ -6,7 +6,12 @@
   line-height: 1.65; scrollbar-gutter: stable; overflow-anchor: none;
 }
 .chat-message { padding: 3px 0; white-space: pre-wrap; }
-.chat-message.donation { border-left: 2px solid var(--green); padding-left: 8px; margin: 5px 0; }
+.chat-message.subscription { border-left: 2px solid var(--green); padding-left: 8px; margin: 5px 0; }
+.chat-message.donation { margin: 8px 0; padding: 0.75em 0.85em; border-radius: 14px; background: #574ca5; color: #fff; font-weight: 700; line-height: 1.45; white-space: normal; }
+.donation-name { margin-bottom: 0.15em; font-weight: 900; white-space: pre-wrap; }
+.donation-message { white-space: pre-wrap; }
+.donation-amount { display: inline-flex; align-items: center; gap: 0.25em; max-width: 100%; margin-top: 0.45em; padding: 0.12em 0.6em; border-radius: 999px; background: rgba(0, 0, 0, 0.14); font-size: 1.05em; font-weight: 900; line-height: 1.4; }
+.donation-cheese { flex-shrink: 0; font-size: 0.85em; }
 .chat-badge { width: 1.15em; height: 1.15em; object-fit: contain; vertical-align: -0.2em; margin-right: 3px; }
 .chat-emoji { width: 1.8em; height: 1.8em; object-fit: contain; vertical-align: middle; }
 .chat-nickname { font-weight: 700; color: var(--nick-dark); margin-right: 7px; }

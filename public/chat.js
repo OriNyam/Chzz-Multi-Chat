@@ -284,6 +284,25 @@ export class ChatView {
         row.classList.add("blind"); row.textContent = "삭제된 메시지입니다.";
       } else if (type === 30) {
         row.classList.add("chat-system"); row.textContent = extras.description || "";
+      } else if (type === 10) {
+        row.classList.add("donation");
+        const name = document.createElement("div");
+        name.className = "donation-name";
+        name.textContent = profile.nickname || "익명의 후원자";
+        const body = document.createElement("div");
+        body.className = "donation-message";
+        appendText(body, message.msg ?? message.content, object(extras.emojis));
+        const amount = document.createElement("div");
+        amount.className = "donation-amount";
+        const value = Number(extras.payAmount);
+        const formatted = (Number.isFinite(value) && value >= 0 ? value : 0).toLocaleString("ko-KR");
+        amount.setAttribute("aria-label", `${formatted} 치즈`);
+        const cheese = document.createElement("span");
+        cheese.className = "donation-cheese";
+        cheese.setAttribute("aria-hidden", "true");
+        cheese.textContent = "🧀";
+        amount.append(cheese, document.createTextNode(formatted));
+        row.append(name, body, amount);
       } else {
         for (const badge of badges(profile)) {
           const img = document.createElement("img");
@@ -296,11 +315,11 @@ export class ChatView {
         nick.textContent = profile.nickname || "익명";
         this.styleNickname(nick, profile);
         row.append(nick);
-        if ([10, 11].includes(type)) {
-          row.classList.add("donation");
+        if (type === 11) {
+          row.classList.add("subscription");
           const label = document.createElement("span");
           label.className = "chat-system";
-          label.textContent = type === 11 ? `${extras.month || ""}개월 구독 ` : `${Number(extras.payAmount || 0).toLocaleString("ko-KR")} 치즈 `;
+          label.textContent = `${extras.month || ""}개월 구독 `;
           row.append(label);
         }
         appendText(row, message.msg ?? message.content, object(extras.emojis));
