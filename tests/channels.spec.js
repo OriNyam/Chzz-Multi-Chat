@@ -18,6 +18,7 @@ test("saved channels show portraits and live-first order without changing chat l
   await page.route("**/api/chat-colors", route => route.fulfill({ json: { colors: [] } }));
   await page.route("**/api/search?*", route => route.fulfill({ json: { content: { data: [{ channel: { channelId: ids[0], channelName: names[0], channelImageUrl: "https://ssl.pstatic.net/profile0.png", openLive: true, followerCount: 12345 } }] } } }));
   await page.goto("/");
+  await expect(page.locator(".subtitle")).toHaveText("치지직 채팅창 모아보기.");
   await page.mouse.move(2, 200);
   const rows = page.locator(".channel-item");
   await expect(rows.locator(".name")).toHaveText([names[1], names[2], names[0]]);
@@ -32,6 +33,11 @@ test("saved channels show portraits and live-first order without changing chat l
   await expect(rows.locator(".name")).toHaveText([names[2], names[1], names[0]]);
   await rows.first().locator("input").check();
   await expect(page.locator(".chat-header .name")).toHaveText([names[2]]);
+  const portrait = page.locator(".chat-header .profile");
+  await expect(portrait).toHaveAttribute("src", "https://ssl.pstatic.net/profile2.png");
+  await expect(portrait).toHaveCSS("border-radius", "50%");
+  await expect(portrait).toHaveCSS("width", "32px");
+  await expect(portrait).toHaveCSS("border-top-color", "rgb(255, 69, 69)");
   await page.locator("#search-input").fill("채널");
   await page.locator("#search-button").click();
   await expect(page.locator(".result .meta")).toHaveText("● LIVE");
@@ -47,6 +53,9 @@ test("saved channels show portraits and live-first order without changing chat l
   live = [true, true, false];
   await page.clock.fastForward(61000);
   await expect(rows.locator(".name")).toHaveText([names[0], names[1], names[2]]);
+  await expect(portrait).not.toHaveClass(/is-live/);
+  await portrait.dispatchEvent("error");
+  await expect(page.locator(".chat-header .profile")).toHaveText(names[2].slice(0, 1));
   await expect(page.locator(".chat-header .name")).toHaveText([names[2]]);
   await expect(rows.last().locator("input")).toBeChecked();
   await rows.nth(1).getByTitle("채널 삭제").click();

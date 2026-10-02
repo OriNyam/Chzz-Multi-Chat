@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080d0f">
+  <meta name="description" content="치지직 채팅창 모아보기.">
   <title>CHZZK Multi Chat</title>
   <link rel="stylesheet" href="/chat.css">
   <style>
@@ -93,6 +94,7 @@
     .sidebar.collapsed .sidebar-toggle { display: none; }
     .sidebar-header {
       display: flex;
+      flex-shrink: 0;
       align-items: center;
       justify-content: space-between;
       padding: 19px 18px 14px;
@@ -134,7 +136,8 @@
       font-size: 15px;
     }
     .theme-toggle:hover { border-color: rgba(0, 255, 163, 0.45); }
-    .sidebar-scroll { flex: 1; overflow-y: auto; padding: 15px; }
+    .sidebar-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 15px; }
+    .sidebar-scroll > .section:last-child { margin-bottom: 0; }
     .section { margin-bottom: 19px; }
     .section-title {
       display: flex;
@@ -147,7 +150,7 @@
     }
     .hint { font-size: 11px; font-weight: 500; letter-spacing: 0; }
     .search-row, .manual-row { display: flex; gap: 7px; }
-    input[type="text"], input[type="number"] {
+    input[type="text"] {
       width: 100%;
       min-width: 0;
       padding: 10px 11px;
@@ -157,7 +160,8 @@
       background: var(--panel-strong);
       color: var(--text);
     }
-    input:focus { border-color: rgba(0, 255, 163, 0.6); box-shadow: 0 0 0 3px var(--soft); }
+    input[type="text"]:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--soft); }
+    button:focus-visible, summary:focus-visible, input:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
     input::placeholder { color: #71807f; }
     .primary, .secondary, .icon {
       border: 0;
@@ -233,7 +237,10 @@
     }
     .add:disabled { cursor: default; border-color: var(--line); background: transparent; color: var(--muted); }
     details { margin-top: 8px; }
-    summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+    summary { display: flex; align-items: center; gap: 8px; padding: 6px 2px; cursor: pointer; color: var(--muted); font-size: 12px; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform 130ms ease; }
+    details[open] > summary::before { transform: rotate(45deg); }
     .manual-row { margin-top: 8px; }
     .empty-list {
       padding: 15px 8px;
@@ -247,16 +254,21 @@
     .channel-item { cursor: grab; }
     .channel-item.dragging { opacity: 0.45; }
     .handle { color: #687775; letter-spacing: -4px; }
-    input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--green); }
-    .settings { display: grid; gap: 11px; }
-    .size-row { display: grid; grid-template-columns: 76px 1fr; align-items: end; gap: 9px; }
-    label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; }
-    .settings input { padding: 8px; font-size: 13px; }
-    .scale { margin-top: 11px; }
-    .scale-label { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
-    .scale-value { color: var(--green); font-weight: 900; }
-    input[type="range"] { width: 100%; margin-top: 9px; accent-color: var(--green); }
-    .sidebar-footer { display: grid; gap: 7px; padding: 12px 15px 15px; border-top: 1px solid var(--line); }
+    input[type="checkbox"] { appearance: none; display: grid; place-content: center; flex: 0 0 18px; width: 18px; height: 18px; margin: 0; border: 1px solid var(--muted); border-radius: 5px; background: var(--panel); cursor: pointer; }
+    input[type="checkbox"]:checked { border-color: var(--green); background: var(--green); }
+    input[type="checkbox"]:checked::after { content: ""; width: 8px; height: 4px; margin-top: -2px; border-left: 2px solid #05271c; border-bottom: 2px solid #05271c; transform: rotate(-45deg); }
+    .sidebar-settings { flex-shrink: 0; padding: 14px 15px 10px; border-top: 1px solid var(--line); background: var(--panel); }
+    .settings { display: grid; gap: 8px; }
+    .setting-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .setting-heading label { color: var(--muted); font-size: 12px; }
+    .setting-value { display: flex; align-items: baseline; justify-content: flex-end; gap: 4px; min-width: 68px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-strong); color: var(--muted); font-size: 10px; }
+    .setting-value output { color: var(--text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    input[type="range"] { appearance: none; display: block; width: 100%; height: 24px; margin: 0; background: transparent; cursor: pointer; }
+    input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: linear-gradient(to right, var(--green) var(--range-progress), var(--scrollbar) var(--range-progress)); }
+    input[type="range"]::-moz-range-track { height: 4px; border-radius: 999px; background: linear-gradient(to right, var(--green) var(--range-progress), var(--scrollbar) var(--range-progress)); }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; margin-top: -5px; border: 3px solid var(--green); border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 3px var(--soft); }
+    input[type="range"]::-moz-range-thumb { box-sizing: border-box; width: 14px; height: 14px; border: 3px solid var(--green); border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 3px var(--soft); }
+    .sidebar-footer { display: grid; flex-shrink: 0; gap: 7px; padding: 0 15px 12px; }
     .reset { border: 0; background: transparent; color: var(--muted); font-size: 11px; }
 
     .chats {
@@ -312,8 +324,9 @@
       border-bottom: 1px solid var(--line);
       background: var(--panel);
     }
-    .chat-header .name { color: var(--green); font-size: 17px; font-weight: 900; line-height: 1.3; }
-    .chat-actions { display: flex; gap: 2px; }
+    .chat-header .profile { width: 32px; height: 32px; flex-basis: 32px; }
+    .chat-header .name { min-width: 0; color: var(--green); font-size: 17px; font-weight: 900; line-height: 1.3; }
+    .chat-actions { display: flex; flex-shrink: 0; gap: 2px; }
     .empty-state {
       display: grid;
       min-height: calc(100vh - 30px);
@@ -331,6 +344,14 @@
       :root { --sidebar: min(88vw, 360px); }
       .chats { gap: 10px; padding: 10px; }
     }
+    @media (max-height: 600px) {
+      .sidebar-header { padding: 10px 15px; }
+      .sidebar-settings { padding-top: 9px; padding-bottom: 6px; }
+      .sidebar-settings .section-title { margin-bottom: 5px; }
+      .settings { gap: 5px; }
+      .size-row { display: grid; grid-template-columns: 136px minmax(0, 1fr); align-items: center; gap: 12px; }
+      .sidebar-footer { padding-bottom: 8px; }
+    }
   </style>
 </head>
 <body>
@@ -342,7 +363,7 @@
         <div class="logo">C</div>
         <div>
           <h1>CHZZK Multi Chat</h1>
-          <div class="subtitle">합방용 채팅 모아보기</div>
+          <div class="subtitle">치지직 채팅창 모아보기.</div>
         </div>
       </div>
       <div class="header-actions">
@@ -374,30 +395,34 @@
         <div class="channel-list" id="channel-list"></div>
       </section>
 
-      <section class="section">
-        <h2 class="section-title">채팅창 크기</h2>
+    </div>
+
+      <section class="sidebar-settings" aria-labelledby="settings-title">
+        <h2 class="section-title" id="settings-title">채팅창 크기</h2>
         <div class="settings">
           <div class="size-row">
-            <div>
-              <label for="width-input">너비</label>
-              <input id="width-input" type="number" min="240" max="900" step="10">
+            <div class="setting-heading">
+              <label for="width-range">너비</label>
+              <span class="setting-value"><output id="width-value" for="width-range">360</output><span>px</span></span>
             </div>
-            <input id="width-range" type="range" min="240" max="900" step="10" aria-label="채팅창 너비">
+            <input id="width-range" type="range" min="240" max="900" step="1" aria-label="채팅창 너비">
           </div>
           <div class="size-row">
-            <div>
-              <label for="height-input">높이</label>
-              <input id="height-input" type="number" min="320" max="1200" step="10">
+            <div class="setting-heading">
+              <label for="height-range">높이</label>
+              <span class="setting-value"><output id="height-value" for="height-range">640</output><span>px</span></span>
             </div>
-            <input id="height-range" type="range" min="320" max="1200" step="10" aria-label="채팅창 높이">
+            <input id="height-range" type="range" min="320" max="1200" step="1" aria-label="채팅창 높이">
+          </div>
+          <div class="size-row">
+            <div class="setting-heading">
+              <label for="scale-input">채팅 확대</label>
+              <span class="setting-value"><output id="scale-value" for="scale-input">100</output><span>%</span></span>
+            </div>
+            <input id="scale-input" type="range" min="0.8" max="1.5" step="0.1">
           </div>
         </div>
-        <div class="scale">
-          <div class="scale-label"><span>채팅 확대</span><span class="scale-value" id="scale-value">100%</span></div>
-          <input id="scale-input" type="range" min="0.8" max="1.5" step="0.1">
-        </div>
       </section>
-    </div>
 
     <footer class="sidebar-footer">
       <button class="secondary" id="refresh-all" type="button">전체 채팅 새로고침</button>
@@ -486,10 +511,16 @@
         if (typeof data.image === "string") channel.image = data.image;
         if (changed) {
           saveChannels();
-          const entry = chatViews.get(channel.id);
-          if (entry) entry.wrapper.querySelector(".name").textContent = channel.name;
         }
-        if (changed || previous !== data.live) renderChannelList();
+        if (changed || previous !== data.live) {
+          const entry = chatViews.get(channel.id);
+          if (entry) {
+            const header = entry.wrapper.querySelector(".chat-header");
+            header.querySelector(".name").textContent = channel.name;
+            header.querySelector(".profile").replaceWith(profile({ ...channel, live: channelStates.get(channel.id) }));
+          }
+          renderChannelList();
+        }
       } catch { /* Keep the last known state when a metadata request fails. */ }
       finally { channelRequests.delete(channel.id); }
     }
@@ -627,6 +658,7 @@
         checkbox.type = "checkbox";
         checkbox.checked = channel.selected !== false;
         checkbox.title = "채팅창 표시";
+        checkbox.setAttribute("aria-label", `${channel.name} 채팅창 표시`);
         checkbox.addEventListener("change", () => {
           channel.selected = checkbox.checked;
           saveChannels();
@@ -688,26 +720,29 @@
         resizer.title = "드래그해서 모든 채팅창 크기 조절";
         resizer.addEventListener("pointerdown", startChatResize);
         actions.append(open, button("↻", "icon", "이 채팅만 새로고침", () => view.refresh()));
-        header.append(name, actions);
+        header.append(profile({ ...channel, live: channelStates.get(channel.id) }), name, actions);
         wrapper.append(header, view.notice, view.element, resizer);
         chatViews.set(channel.id, { wrapper, view });
         chats.appendChild(wrapper);
       });
     }
 
-    function updateConfig() {
+    function updateConfig(values = {}) {
       const following = [...chatViews.values()].filter(({ view }) => view.follow);
-      config.width = clamp($("#width-input").value, 240, 900, DEFAULT_CONFIG.width);
-      config.height = clamp($("#height-input").value, 320, 1200, DEFAULT_CONFIG.height);
-      config.scale = clamp($("#scale-input").value, 0.8, 1.5, DEFAULT_CONFIG.scale);
+      config.width = Math.round(clamp(values.width ?? config.width, 240, 900, DEFAULT_CONFIG.width));
+      config.height = Math.round(clamp(values.height ?? config.height, 320, 1200, DEFAULT_CONFIG.height));
+      config.scale = clamp(values.scale ?? config.scale, 0.8, 1.5, DEFAULT_CONFIG.scale);
       document.documentElement.style.setProperty("--chat-width", config.width);
       document.documentElement.style.setProperty("--chat-height", config.height);
       document.documentElement.style.setProperty("--chat-scale", config.scale);
-      $("#width-input").value = config.width;
-      $("#width-range").value = config.width;
-      $("#height-input").value = config.height;
-      $("#height-range").value = config.height;
-      $("#scale-value").textContent = `${Math.round(config.scale * 100)}%`;
+      $("#width-value").value = config.width;
+      $("#height-value").value = config.height;
+      $("#scale-value").value = Math.round(config.scale * 100);
+      for (const [key, selector] of [["width", "#width-range"], ["height", "#height-range"], ["scale", "#scale-input"]]) {
+        const range = $(selector);
+        range.value = config[key];
+        range.style.setProperty("--range-progress", `${(config[key] - Number(range.min)) / (Number(range.max) - Number(range.min)) * 100}%`);
+      }
       saveConfig();
       requestAnimationFrame(() => {
         for (const { view } of following) if (!view.disposed) { view.follow = true; view.scrollToBottom(); }
@@ -759,9 +794,10 @@
       document.body.classList.add("resizing-chats");
 
       const resize = (moveEvent) => {
-        $("#width-input").value = clamp(startWidth + moveEvent.clientX - startX, 240, 900, startWidth);
-        $("#height-input").value = clamp(startHeight + moveEvent.clientY - startY, 320, 1200, startHeight);
-        updateConfig();
+        updateConfig({
+          width: startWidth + moveEvent.clientX - startX,
+          height: startHeight + moveEvent.clientY - startY
+        });
       };
       const finish = () => {
         document.body.classList.remove("resizing-chats");
@@ -776,11 +812,6 @@
     }
 
     function init() {
-      $("#width-input").value = config.width;
-      $("#width-range").value = config.width;
-      $("#height-input").value = config.height;
-      $("#height-range").value = config.height;
-      $("#scale-input").value = config.scale;
       updateConfig();
       renderChannelList();
       renderChats();
@@ -796,17 +827,9 @@
         addChannel({ id: input.value.trim() });
         input.value = "";
       });
-      $("#width-input").addEventListener("input", updateConfig);
-      $("#height-input").addEventListener("input", updateConfig);
-      $("#width-range").addEventListener("input", () => {
-        $("#width-input").value = $("#width-range").value;
-        updateConfig();
-      });
-      $("#height-range").addEventListener("input", () => {
-        $("#height-input").value = $("#height-range").value;
-        updateConfig();
-      });
-      $("#scale-input").addEventListener("input", updateConfig);
+      $("#width-range").addEventListener("input", (event) => updateConfig({ width: event.target.value }));
+      $("#height-range").addEventListener("input", (event) => updateConfig({ height: event.target.value }));
+      $("#scale-input").addEventListener("input", (event) => updateConfig({ scale: event.target.value }));
       $("#refresh-all").addEventListener("click", () => {
         for (const { view } of chatViews.values()) view.refresh();
       });

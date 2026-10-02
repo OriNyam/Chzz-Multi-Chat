@@ -48,10 +48,12 @@ test("read-only chat preserves layout, settings, badges, theme, scroll and conne
   await page.mouse.move(2, 200);
   await page.locator("#theme-toggle").click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await page.locator("#width-input").fill("420");
-  await page.locator("#height-input").fill("700");
+  await page.locator("#width-range").fill("420");
+  await page.locator("#height-range").fill("700");
   await page.locator("#scale-input").fill("1.3");
   await expect(card).toHaveCSS("width", "420px");
+  await expect(page.locator(".chat").last()).toHaveCSS("width", "420px");
+  await expect(page.locator(".chat").last()).toHaveCSS("height", "700px");
   await expect(card.locator(".chat-messages")).toHaveCSS("font-size", "18.2px");
   const before = sockets.length;
   await page.locator(".channel-item input").last().uncheck();
@@ -63,6 +65,10 @@ test("read-only chat preserves layout, settings, badges, theme, scroll and conne
   await page.mouse.move(handle.x + 8, handle.y + 8);
   await page.mouse.down(); await page.mouse.move(handle.x + 48, handle.y + 38); await page.mouse.up();
   await expect(card).toHaveCSS("width", "460px");
+  await expect(page.locator("#width-value")).toHaveText("460");
+  await expect(page.locator("#height-value")).toHaveText("730");
+  await expect(page.locator("#width-range")).toHaveValue("460");
+  await expect(page.locator("#height-range")).toHaveValue("730");
   expect(JSON.parse(await page.evaluate(() => localStorage.getItem("chzzk_multi_chat_config"))).width).toBe(460);
   await card.getByTitle("이 채팅만 새로고침").click();
   await expect(card.locator(".chat-message")).toHaveCount(50);
